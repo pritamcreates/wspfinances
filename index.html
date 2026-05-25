@@ -4,6 +4,48 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>White Screen Production — Document System</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  // ── PASTE YOUR FIREBASE CONFIG HERE ──
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // Restrict to whitescreen domain (optional — remove if not needed)
+  // provider.setCustomParameters({ hd: 'yourcompany.com' });
+
+  // Expose to global scope for use in non-module script
+  window._fbAuth = auth;
+  window._fbDb = db;
+  window._fbProvider = provider;
+  window._fbSignInWithPopup = signInWithPopup;
+  window._fbSignOut = fbSignOut;
+  window._fbOnAuthStateChanged = onAuthStateChanged;
+  window._fbCollection = collection;
+  window._fbDoc = doc;
+  window._fbSetDoc = setDoc;
+  window._fbGetDocs = getDocs;
+  window._fbDeleteDoc = deleteDoc;
+  window._fbQuery = query;
+  window._fbOrderBy = orderBy;
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap');
 
@@ -98,6 +140,69 @@
   .login-field input.error {
     border-color: #cc4444;
     background: rgba(204,68,68,0.08);
+  }
+
+  /* Google Sign-In button */
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: white;
+    color: #1f1f1f;
+    border: none;
+    border-radius: 4px;
+    padding: 13px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .btn-google:hover { background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .btn-google:active { transform: scale(0.99); }
+  .btn-google svg { flex-shrink: 0; }
+
+  /* Loading state on login */
+  .btn-google.loading { opacity: 0.65; pointer-events: none; }
+  .btn-google .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  .btn-google.loading .spinner { display: block; }
+  .btn-google.loading .google-icon { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Signed-in user pill */
+  .topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .topbar-user-name {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .login-error {
@@ -827,20 +932,19 @@
     <div class="login-heading">Sign In</div>
     <div class="login-sub">Restricted access — authorised personnel only.</div>
 
-    <div class="login-error" id="login-error">Incorrect username or password. Please try again.</div>
+    <div class="login-error" id="login-error">Sign-in failed. You may not have access to this system.</div>
 
-    <div class="login-field">
-      <label>Username</label>
-      <input type="text" id="login-username" placeholder="Enter username" autocomplete="username"
-        onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password"
-        onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-
-    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <button class="btn-google" id="btn-google-signin" onclick="doGoogleSignIn()">
+      <div class="spinner"></div>
+      <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continue with Google
+    </button>
 
     <div class="login-footer">© White Screen Production · For internal use only</div>
   </div>
@@ -861,6 +965,10 @@
   <div class="topbar-right">
     <button class="btn-records" onclick="openRecords()">📋 Records</button>
     <div class="topbar-ref" id="topbar-ref">—</div>
+    <div class="topbar-user" id="topbar-user" style="display:none;">
+      <img class="topbar-avatar" id="topbar-avatar" src="" alt="">
+      <span class="topbar-user-name" id="topbar-user-name"></span>
+    </div>
     <button class="btn-signout" onclick="signOut()">Sign Out</button>
   </div>
 </div>
@@ -1226,51 +1334,57 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── AUTH ──
-const AUTH_USER = 'whitescreen';
-const AUTH_PASS = '93324$';
+// ── AUTH (Firebase Google Sign-In) ──
+let currentUser = null;
 
-function checkAuth() {
-  const loggedIn = sessionStorage.getItem('wsp_auth') === 'true';
-  if (loggedIn) {
-    document.getElementById('login-screen').classList.remove('visible');
-  } else {
-    document.getElementById('login-screen').classList.add('visible');
-  }
-}
-
-function doLogin() {
-  const u = document.getElementById('login-username').value.trim();
-  const p = document.getElementById('login-password').value;
+function doGoogleSignIn() {
+  const btn = document.getElementById('btn-google-signin');
   const errEl = document.getElementById('login-error');
-  const uInput = document.getElementById('login-username');
-  const pInput = document.getElementById('login-password');
+  btn.classList.add('loading');
+  errEl.classList.remove('visible');
 
-  if (u === AUTH_USER && p === AUTH_PASS) {
-    sessionStorage.setItem('wsp_auth', 'true');
-    errEl.classList.remove('visible');
-    uInput.classList.remove('error');
-    pInput.classList.remove('error');
-    document.getElementById('login-screen').classList.remove('visible');
-    pInput.value = '';
-  } else {
-    errEl.classList.add('visible');
-    uInput.classList.add('error');
-    pInput.classList.add('error');
-    pInput.value = '';
-    pInput.focus();
-  }
+  window._fbSignInWithPopup(window._fbAuth, window._fbProvider)
+    .then(result => {
+      // onAuthStateChanged will handle the rest
+    })
+    .catch(err => {
+      btn.classList.remove('loading');
+      errEl.classList.add('visible');
+      console.error('Google Sign-In error:', err);
+    });
 }
 
 function signOut() {
-  sessionStorage.removeItem('wsp_auth');
-  document.getElementById('login-username').value = '';
-  document.getElementById('login-password').value = '';
-  document.getElementById('login-error').classList.remove('visible');
-  document.getElementById('login-username').classList.remove('error');
-  document.getElementById('login-password').classList.remove('error');
-  document.getElementById('login-screen').classList.add('visible');
-  document.getElementById('login-username').focus();
+  window._fbSignOut(window._fbAuth).then(() => {
+    currentUser = null;
+    document.getElementById('topbar-user').style.display = 'none';
+    document.getElementById('login-screen').classList.add('visible');
+  });
+}
+
+// Listen for auth state changes
+function initAuth() {
+  window._fbOnAuthStateChanged(window._fbAuth, user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('login-screen').classList.remove('visible');
+      document.getElementById('btn-google-signin').classList.remove('loading');
+      // Show user info in topbar
+      const avatarEl = document.getElementById('topbar-avatar');
+      const nameEl = document.getElementById('topbar-user-name');
+      const userEl = document.getElementById('topbar-user');
+      if (user.photoURL) { avatarEl.src = user.photoURL; avatarEl.style.display = ''; }
+      else { avatarEl.style.display = 'none'; }
+      nameEl.textContent = user.displayName || user.email || '';
+      userEl.style.display = 'flex';
+      // Load records from Firestore for this user
+      loadRecords();
+    } else {
+      currentUser = null;
+      document.getElementById('topbar-user').style.display = 'none';
+      document.getElementById('login-screen').classList.add('visible');
+    }
+  });
 }
 
 // ── STATE ──
@@ -1281,20 +1395,48 @@ let additionalItems = [];
 let gearItems = { photo: [], video: [] };
 let currentTotal = 0;
 
-// Records stored in localStorage
 let records = [];
 let recordFilter = 'all';
 let pendingDeleteId = null;
 
-// ── STORAGE ──
-function loadRecords() {
+// ── FIRESTORE STORAGE ──
+async function loadRecords() {
+  if (!currentUser) return;
   try {
-    const raw = localStorage.getItem('wsp_records');
-    records = raw ? JSON.parse(raw) : [];
-  } catch(e) { records = []; }
+    const col = window._fbCollection(window._fbDb, 'users', currentUser.uid, 'records');
+    const q = window._fbQuery(col, window._fbOrderBy('savedAt', 'desc'));
+    const snap = await window._fbGetDocs(q);
+    records = snap.docs.map(d => d.data());
+    renderRecords();
+  } catch(e) {
+    console.error('Firestore load error:', e);
+    records = [];
+  }
 }
-function saveRecords() {
-  try { localStorage.setItem('wsp_records', JSON.stringify(records)); } catch(e) {}
+
+async function saveRecords() {
+  if (!currentUser) return;
+  // We save only the latest record (the one just pushed to front of records)
+  const record = records[0];
+  if (!record) return;
+  try {
+    const docRef = window._fbDoc(window._fbDb, 'users', currentUser.uid, 'records', String(record.id));
+    await window._fbSetDoc(docRef, record);
+  } catch(e) {
+    console.error('Firestore save error:', e);
+    showToast('Error saving to cloud. Check your connection.');
+  }
+}
+
+async function deleteRecord(id) {
+  if (!currentUser) return;
+  try {
+    const docRef = window._fbDoc(window._fbDb, 'users', currentUser.uid, 'records', String(id));
+    await window._fbDeleteDoc(docRef);
+  } catch(e) {
+    console.error('Firestore delete error:', e);
+    showToast('Error deleting record. Check your connection.');
+  }
 }
 
 // ── REF NUMBER ──
@@ -1712,7 +1854,7 @@ function downloadPDF() {
 }
 
 // ── SAVE RECORD ──
-function saveRecord() {
+async function saveRecord() {
   const docnum = document.getElementById('f-docnum').value.trim();
   const client = document.getElementById('f-client').value.trim();
   const project = document.getElementById('f-project').value.trim();
@@ -1752,9 +1894,9 @@ function saveRecord() {
   };
 
   records.unshift(record);
-  saveRecords();
+  await saveRecords();
   renderRecords();
-  showToast('Record saved successfully.');
+  showToast('Record saved to cloud successfully.');
 }
 
 // ── RECORDS MODAL ──
@@ -1855,10 +1997,10 @@ function cancelDelete() {
   pendingDeleteId = null;
   document.getElementById('confirm-overlay').classList.remove('open');
 }
-function confirmDelete() {
+async function confirmDelete() {
   if (pendingDeleteId !== null) {
     records = records.filter(r => r.id !== pendingDeleteId);
-    saveRecords();
+    await deleteRecord(pendingDeleteId);
     renderRecords();
     showToast('Record deleted.');
   }
@@ -1875,8 +2017,15 @@ function showToast(msg) {
 }
 
 // ── INIT ──
-checkAuth();
-loadRecords();
+// Wait for Firebase module to be ready, then init auth listener
+window.addEventListener('load', () => {
+  if (window._fbOnAuthStateChanged) {
+    initAuth();
+  } else {
+    // Retry briefly if module hasn't attached yet
+    setTimeout(initAuth, 300);
+  }
+});
 document.getElementById('f-date').valueAsDate = new Date();
 document.getElementById('f-docnum').value = generateRef();
 renderCats();
