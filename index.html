@@ -1891,7 +1891,23 @@ async function saveRecord() {
     advance,
     services: svcList,
     cats: [...categories],
-    savedAt: new Date().toISOString()
+    savedAt: new Date().toISOString(),
+    rawServices: { ...services },
+    rates: {
+      photo: document.getElementById('rate-photo').value,
+      video: document.getElementById('rate-video').value
+    },
+    days: {
+      photo: document.getElementById('days-photo').value,
+      video: document.getElementById('days-video').value
+    },
+    descs: {
+      photo: document.getElementById('svc-desc-photo') ? document.getElementById('svc-desc-photo').value : '',
+      video: document.getElementById('svc-desc-video') ? document.getElementById('svc-desc-video').value : ''
+    },
+    gearItems: JSON.parse(JSON.stringify(gearItems)),
+    additionalItems: JSON.parse(JSON.stringify(additionalItems)),
+    svcDescStyle: JSON.parse(JSON.stringify(svcDescStyle))
   };
 
   records.unshift(record);
@@ -1984,9 +2000,50 @@ function loadRecord(id) {
   if (r.type === 'quotation') document.getElementById('f-valid').value = r.validDays;
   categories = [...r.cats];
   renderCats();
+
+  if (r.rawServices) {
+    services = { ...r.rawServices };
+    document.getElementById('check-photo').classList.toggle('checked', services.photo);
+    document.getElementById('body-photo').classList.toggle('open', services.photo);
+    document.getElementById('check-video').classList.toggle('checked', services.video);
+    document.getElementById('body-video').classList.toggle('open', services.video);
+    document.getElementById('check-express').classList.toggle('checked', services.express);
+
+    if (r.rates) {
+      document.getElementById('rate-photo').value = r.rates.photo || 15000;
+      document.getElementById('rate-video').value = r.rates.video || 15000;
+    }
+    if (r.days) {
+      document.getElementById('days-photo').value = r.days.photo || 1;
+      document.getElementById('days-video').value = r.days.video || 1;
+    }
+    if (r.descs) {
+      if (document.getElementById('svc-desc-photo')) document.getElementById('svc-desc-photo').value = r.descs.photo || '';
+      if (document.getElementById('svc-desc-video')) document.getElementById('svc-desc-video').value = r.descs.video || '';
+    }
+    if (r.gearItems) {
+      gearItems = JSON.parse(JSON.stringify(r.gearItems));
+      renderGear('photo');
+      renderGear('video');
+    }
+    if (r.additionalItems) {
+      additionalItems = JSON.parse(JSON.stringify(r.additionalItems));
+      renderAdditional();
+    }
+    if (r.svcDescStyle) {
+      Object.assign(svcDescStyle, r.svcDescStyle);
+      syncDescStyle('photo');
+      syncDescStyle('video');
+      updateToolbarState('photo');
+      updateToolbarState('video');
+    }
+    showToast('Record and services loaded.');
+  } else {
+    showToast('Old record loaded. Services must be re-selected manually.');
+  }
+
   update();
   closeRecords();
-  showToast('Record loaded. Services must be re-selected manually.');
 }
 
 // ── DELETE ──
