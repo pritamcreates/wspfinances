@@ -616,23 +616,23 @@
   .sheet-doc-type { text-align: right; }
   .sheet-doc-label {
     font-family: 'Playfair Display', serif;
-    font-size: 22px; color: white; font-weight: 600; letter-spacing: 0.05em;
+    font-size: 26px; color: white; font-weight: 600; letter-spacing: 0.05em;
   }
   .sheet-ref {
     font-family: 'DM Mono', monospace;
-    font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; margin-top: 4px;
+    font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; margin-top: 4px;
   }
 
   .sheet-meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
   .sheet-meta-cell { padding: 16px 20px; border-right: 1px solid var(--border); }
   .sheet-meta-cell:last-child { border-right: none; }
-  .meta-label { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); margin-bottom: 4px; }
-  .meta-value { font-size: 12px; font-weight: 500; color: var(--ink); min-height: 16px; }
+  .meta-label { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); margin-bottom: 4px; }
+  .meta-value { font-size: 14px; font-weight: 500; color: var(--ink); min-height: 16px; }
 
   .sheet-cat-row { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
   .sheet-cat-badge {
     background: var(--off-white); border: 1px solid var(--border); border-radius: 20px;
-    padding: 3px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+    padding: 3px 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
     text-transform: uppercase; color: var(--subtle);
   }
 
@@ -641,16 +641,16 @@
     display: grid; grid-template-columns: 1fr 100px 80px 90px;
     gap: 8px; padding: 12px 8px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
   }
-  .items-header span { font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
+  .items-header span { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
   .items-header span:not(:first-child) { text-align: right; }
   .line-item {
     display: grid; grid-template-columns: 1fr 100px 80px 90px;
-    gap: 8px; padding: 9px 8px; border-bottom: 1px solid var(--highlight); align-items: center;
+    gap: 8px; padding: 12px 8px; border-bottom: 1px solid var(--highlight); align-items: center;
   }
-  .line-desc { font-size: 13px; font-weight: 500; }
-  .line-sub { font-size: 10px; color: var(--subtle); margin-top: 1px; }
-  .line-num { text-align: right; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink); }
-  .line-empty { padding: 32px 8px; text-align: center; color: var(--mid); font-size: 12px; letter-spacing: 0.1em; font-style: italic; }
+  .line-desc { font-size: 15px; font-weight: 500; }
+  .line-sub { font-size: 12px; color: var(--subtle); margin-top: 1px; }
+  .line-num { text-align: right; font-family: 'DM Mono', monospace; font-size: 14px; color: var(--ink); }
+  .line-empty { padding: 32px 8px; text-align: center; color: var(--mid); font-size: 14px; letter-spacing: 0.1em; font-style: italic; }
 
   /* Total */
   .sheet-total {
@@ -658,8 +658,8 @@
     border-top: 2px solid var(--black);
     display: flex; align-items: center; justify-content: space-between;
   }
-  .total-label { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
-  .total-amount { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--black); }
+  .total-label { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
+  .total-amount { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--black); }
 
   /* Amount in words */
   .sheet-amount-words {
@@ -667,28 +667,28 @@
     display: flex; align-items: baseline; gap: 8px;
   }
   .amount-words-label {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--subtle);
+    font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--subtle);
     white-space: nowrap;
   }
   .amount-words-value {
-    font-size: 11px; color: var(--ink); font-style: italic;
+    font-size: 13px; color: var(--ink); font-style: italic;
   }
 
-  .sheet-vat-note { text-align: right; padding: 0 28px 6px; font-size: 10px; color: var(--subtle); font-style: italic; }
+  .sheet-vat-note { text-align: right; padding: 0 28px 6px; font-size: 11px; color: var(--subtle); font-style: italic; }
 
   .payment-due-row {
     display: none; padding: 10px 28px;
     background: #fff8f0; border-top: 1px solid #f0e0cc; border-bottom: 1px solid #f0e0cc;
-    font-size: 11px; color: #8a5c2e; font-weight: 500; letter-spacing: 0.06em;
+    font-size: 13px; color: #8a5c2e; font-weight: 500; letter-spacing: 0.06em;
   }
   .invoice-mode .payment-due-row { display: flex; justify-content: space-between; }
   .invoice-mode .valid-row { display: none; }
 
-  .valid-row { padding: 10px 28px; font-size: 10px; color: var(--subtle); border-top: 1px solid var(--border); }
+  .valid-row { padding: 10px 28px; font-size: 12px; color: var(--subtle); border-top: 1px solid var(--border); }
 
   .sheet-notes {
     padding: 14px 28px; border-top: 1px solid var(--border);
-    font-size: 11px; color: var(--ink); font-style: italic; min-height: 36px;
+    font-size: 13px; color: var(--ink); font-style: italic; min-height: 36px;
     white-space: pre-wrap; display: none;
   }
   .sheet-notes.has-content { display: block; }
@@ -698,7 +698,7 @@
     display: flex; align-items: center; justify-content: space-between;
     margin-top: auto;
   }
-  .footer-contact { font-size: 10px; color: rgba(255,255,255,0.5); font-family: 'DM Mono', monospace; letter-spacing: 0.05em; line-height: 1.7; }
+  .footer-contact { font-size: 12px; color: rgba(255,255,255,0.5); font-family: 'DM Mono', monospace; letter-spacing: 0.05em; line-height: 1.7; }
   .footer-brand svg { height: 28px; width: auto; fill: rgba(255,255,255,0.25); }
 
   /* Action buttons */
@@ -847,7 +847,7 @@
   }
   .totals-row:last-child { border-bottom: none; }
   .totals-row-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -855,7 +855,7 @@
   }
   .totals-row-value {
     font-family: 'DM Mono', monospace;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--ink);
   }
   .totals-row.grand {
@@ -863,20 +863,20 @@
     border-bottom: none;
   }
   .totals-row.grand .totals-row-label {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--black);
     letter-spacing: 0.14em;
   }
   .totals-row.grand .totals-row-value {
     font-family: 'Playfair Display', serif;
-    font-size: 22px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--black);
   }
   .totals-row.advance .totals-row-value { color: #2d6a2d; }
   .totals-row.balance .totals-row-label { color: var(--black); font-weight: 700; }
-  .totals-row.balance .totals-row-value { font-weight: 700; color: var(--black); font-size: 15px; }
+  .totals-row.balance .totals-row-value { font-weight: 700; color: var(--black); font-size: 16px; }
 
   /* Invoice-only totals block visibility */
   .invoice-totals-block { display: none; }
@@ -902,16 +902,26 @@
       margin: 0;
       size: A4 portrait;
     }
-    body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: white;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
     .topbar, .form-panel, .action-row, .modal-overlay, .confirm-overlay, .toast { display: none !important; }
-    .layout { display: block; }
-    .preview-panel { padding: 0; background: white; align-items: flex-start; }
+    .layout { display: block; min-height: 0; }
+    .preview-panel { padding: 0; background: white; display: block; }
     .doc-sheet {
       box-shadow: none;
-      width: 210mm;
-      min-height: 297mm;
-      height: 297mm;
+      width: 100%;
+      min-height: 0;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
       page-break-after: avoid;
+      page-break-inside: avoid;
     }
   }
 </style>
