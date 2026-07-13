@@ -1259,7 +1259,7 @@
           </div>
           <div class="totals-row grand">
             <span class="totals-row-label">Grand Total</span>
-            <span class="totals-row-value" id="grand-total">Rs 0</span>
+            <span class="totals-row-value" id="inv-grand-total">Rs 0</span>
           </div>
         </div>
       </div>
@@ -1842,7 +1842,7 @@ function update() {
     document.getElementById('inv-subtotal').textContent = fmt(total);
     document.getElementById('inv-advance-display').textContent = fmt(advance);
     document.getElementById('inv-balance').textContent = fmt(balance);
-    document.getElementById('grand-total').textContent = fmt(total);
+    document.getElementById('inv-grand-total').textContent = fmt(total);
     document.getElementById('amount-in-words').textContent = amountInWords(balance > 0 ? balance : total);
   } else {
     document.getElementById('grand-total').textContent = fmt(total);
