@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, Loader2 } from 'lucide-react';
 import { auth, googleProvider, signInWithPopup } from '../lib/firebase';
+import whiteLogo from '../assets/whitelogo.png';
 import '../styles/auth.css';
 
 export default function AuthScreen({ onSignIn }) {
@@ -26,18 +27,11 @@ export default function AuthScreen({ onSignIn }) {
   return (
     <div className="auth-container">
       <div className="auth-card glass-panel">
-        <div className="auth-brand">
-          <div className="brand-logo">
-            <span className="brand-text">WHITE</span>
-            <span className="brand-text outline">SCREEN</span>
-          </div>
-          <div className="brand-sub">PRODUCTION</div>
+        <div className="auth-brand" style={{ marginBottom: '40px' }}>
+          <img src={whiteLogo} alt="White Screen Production" style={{ height: '80px', objectFit: 'contain' }} />
         </div>
 
         <div className="auth-content">
-          <h2 className="auth-title">Sign In</h2>
-          <p className="auth-subtitle">Restricted access — authorised personnel only.</p>
-          
           {error && <div className="auth-error">{error}</div>}
 
           <button 
