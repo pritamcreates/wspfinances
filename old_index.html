@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>White Screen Production — Document System</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  // ── FIREBASE CONFIG ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyCxDibM3nQS6ZJlQ72WbG6Gk1sP9574oh0",
+    authDomain: "white-screen-production.firebaseapp.com",
+    projectId: "white-screen-production",
+    storageBucket: "white-screen-production.firebasestorage.app",
+    messagingSenderId: "638125497769",
+    appId: "1:638125497769:web:9dd9d20014f013420c78b8",
+    measurementId: "G-676MDV4LWL"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // Restrict to whitescreen domain (optional — remove if not needed)
+  // provider.setCustomParameters({ hd: 'yourcompany.com' });
+
+  // Expose to global scope for use in non-module script
+  window._fbAuth = auth;
+  window._fbDb = db;
+  window._fbProvider = provider;
+  window._fbSignInWithPopup = signInWithPopup;
+  window._fbSignOut = fbSignOut;
+  window._fbOnAuthStateChanged = onAuthStateChanged;
+  window._fbCollection = collection;
+  window._fbDoc = doc;
+  window._fbSetDoc = setDoc;
+  window._fbGetDocs = getDocs;
+  window._fbDeleteDoc = deleteDoc;
+  window._fbQuery = query;
+  window._fbOrderBy = orderBy;
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap');
+
+  :root {
+    --black: #0a0a0a;
+    --white: #fafafa;
+    --off-white: #f2f0eb;
+    --mid: #c8c4bb;
+    --accent: #1a1a1a;
+    --ink: #2d2d2d;
+    --subtle: #888880;
+    --border: #dedad3;
+    --highlight: #e8e4dc;
+  }
+
+  /* ── LOGIN PAGE ── */
+  #login-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--black);
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+  }
+  #login-screen.visible { display: flex; }
+
+  .login-wrap {
+    width: 100%;
+    max-width: 420px;
+    padding: 0 24px;
+  }
+
+  .login-brand {
+    margin-bottom: 48px;
+  }
+  .login-brand svg { height: 64px; width: auto; fill: white; }
+  .login-brand-sub {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    margin-top: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .login-heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: white;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .login-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 36px;
+    letter-spacing: 0.03em;
+  }
+
+  .login-field {
+    margin-bottom: 16px;
+  }
+  .login-field label {
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 8px;
+  }
+  .login-field input {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 4px;
+    padding: 13px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: white;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .login-field input::placeholder { color: rgba(255,255,255,0.2); }
+  .login-field input:focus {
+    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.09);
+  }
+  .login-field input.error {
+    border-color: #cc4444;
+    background: rgba(204,68,68,0.08);
+  }
+
+  /* Google Sign-In button */
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: white;
+    color: #1f1f1f;
+    border: none;
+    border-radius: 4px;
+    padding: 13px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .btn-google:hover { background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .btn-google:active { transform: scale(0.99); }
+  .btn-google svg { flex-shrink: 0; }
+
+  /* Loading state on login */
+  .btn-google.loading { opacity: 0.65; pointer-events: none; }
+  .btn-google .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  .btn-google.loading .spinner { display: block; }
+  .btn-google.loading .google-icon { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Signed-in user pill */
+  .topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .topbar-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .topbar-user-name {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .login-error {
+    display: none;
+    font-size: 11px;
+    color: #e07070;
+    margin-bottom: 20px;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    background: rgba(204,68,68,0.1);
+    border: 1px solid rgba(204,68,68,0.2);
+    border-radius: 4px;
+  }
+  .login-error.visible { display: block; }
+
+  .login-btn {
+    width: 100%;
+    background: white;
+    color: var(--black);
+    border: none;
+    border-radius: 4px;
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+  }
+  .login-btn:hover { background: rgba(255,255,255,0.88); }
+  .login-btn:active { transform: scale(0.99); }
+
+  .login-footer {
+    margin-top: 48px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 0.08em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Sign out button in topbar */
+  .btn-signout {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.4);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-signout:hover { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.7); }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--black);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand svg { height: 36px; width: auto; fill: white; }
+
+  /* ── DOC TYPE TOGGLE ── */
+  .doc-toggle {
+    display: flex;
+    gap: 0;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 3px;
+  }
+  .doc-toggle button {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 7px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .doc-toggle button.active { background: var(--white); color: var(--black); font-weight: 600; }
+  .doc-toggle button:hover:not(.active) { color: rgba(255,255,255,0.85); }
+
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .topbar-ref {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.1em;
+  }
+
+  /* Records button in topbar */
+  .btn-records {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-records:hover { background: rgba(255,255,255,0.2); color: white; }
+
+  /* ── MAIN LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 480px 1fr;
+    min-height: calc(100vh - 52px);
+  }
+
+  /* ── LEFT PANEL ── */
+  .form-panel {
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    padding: 36px 32px;
+    overflow-y: auto;
+  }
+
+  .section-title {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--subtle);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-section { margin-bottom: 32px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--subtle);
+    margin-bottom: 5px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--black);
+    background: var(--white);
+  }
+  .field textarea { resize: vertical; min-height: 72px; }
+
+  /* Doc-type-specific */
+  .invoice-only { display: none; }
+  .invoice-mode .invoice-only { display: block; }
+  .invoice-mode .quotation-only { display: none; }
+
+  /* Doc number field with manual input */
+  .doc-number-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .doc-number-field input {
+    flex: 1;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+  .btn-regen {
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 10px;
+    cursor: pointer;
+    color: var(--subtle);
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-regen:hover { border-color: var(--black); color: var(--black); }
+
+  /* ── CATEGORIES ── */
+  .cat-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .cat-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .cat-tag .remove-cat {
+    background: none; border: none; cursor: pointer;
+    color: var(--subtle); font-size: 14px; line-height: 1; padding: 0;
+  }
+  .cat-tag .remove-cat:hover { color: #cc3333; }
+  .cat-add-row { display: flex; gap: 8px; margin-top: 6px; }
+  .cat-add-row input {
+    flex: 1;
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+  .cat-add-row input:focus { border-color: var(--black); }
+
+  /* ── SERVICE CARDS ── */
+  .service-card { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+  .service-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; background: var(--off-white); cursor: pointer; user-select: none;
+  }
+  .service-header-left { display: flex; align-items: center; gap: 10px; }
+  .service-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--mid); border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .service-check.checked { background: var(--black); border-color: var(--black); }
+  .service-check.checked::after {
+    content: ''; display: block; width: 4px; height: 7px;
+    border: 1.5px solid white; border-top: none; border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+  .service-name { font-weight: 600; font-size: 13px; }
+  .service-rate-hint { font-size: 11px; color: var(--subtle); font-family: 'DM Mono', monospace; }
+  .service-body { padding: 14px; border-top: 1px solid var(--border); display: none; }
+  .service-body.open { display: block; }
+
+  .days-control {
+    display: flex; align-items: center; gap: 0;
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden; width: fit-content;
+  }
+  .days-control button {
+    width: 30px; height: 32px; background: var(--off-white); border: none;
+    cursor: pointer; font-size: 16px; color: var(--ink); transition: background 0.1s;
+  }
+  .days-control button:hover { background: var(--border); }
+  .days-control input {
+    width: 44px; border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    text-align: center; font-family: 'DM Mono', monospace; font-size: 13px;
+    background: var(--white); color: var(--ink); outline: none; padding: 0; height: 32px;
+  }
+  .gear-list { margin-top: 10px; }
+  .gear-item { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
+  .gear-item input {
+    flex: 1; background: var(--off-white); border: 1px solid var(--border);
+    border-radius: 4px; padding: 6px 10px; font-size: 12px; font-family: 'DM Sans', sans-serif; outline: none;
+  }
+  .gear-item input:focus { border-color: var(--black); }
+  .gear-item .gear-amount { width: 90px; }
+  .gear-item .remove-btn { background: none; border: none; cursor: pointer; color: var(--subtle); font-size: 16px; line-height: 1; padding: 0 2px; }
+  .gear-item .remove-btn:hover { color: #cc3333; }
+
+  .express-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 12px; cursor: pointer; background: var(--off-white); transition: background 0.15s;
+  }
+  .express-row:hover { background: var(--highlight); }
+  .express-label { font-weight: 500; font-size: 13px; }
+  .express-hint { font-size: 11px; color: var(--subtle); font-family: 'DM Mono', monospace; margin-left: auto; }
+
+  .additional-item {
+    display: grid; grid-template-columns: 1fr 110px 28px;
+    gap: 8px; margin-bottom: 8px; align-items: center;
+  }
+  .additional-item input {
+    background: var(--off-white); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 10px; font-size: 12px;
+    font-family: 'DM Sans', sans-serif; outline: none; width: 100%;
+  }
+  .additional-item input:focus { border-color: var(--black); }
+  .additional-item .remove-btn { background: none; border: none; cursor: pointer; color: var(--subtle); font-size: 18px; line-height: 1; }
+  .additional-item .remove-btn:hover { color: #cc3333; }
+
+  .btn-add {
+    background: none; border: 1px dashed var(--mid); border-radius: 4px;
+    padding: 7px 14px; font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--subtle); cursor: pointer; transition: all 0.15s;
+    width: 100%; margin-top: 4px;
+  }
+  .btn-add:hover { border-color: var(--black); color: var(--black); }
+
+  /* ── SERVICE DESCRIPTION ── */
+  .svc-desc-row { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .svc-desc-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--subtle); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+  }
+  .svc-desc-label span { flex:1; }
+  .svc-desc-toolbar {
+    display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; align-items: center;
+  }
+  .svc-desc-toolbar button {
+    background: var(--off-white); border: 1px solid var(--border); border-radius: 3px;
+    padding: 3px 7px; font-size: 11px; cursor: pointer; color: var(--ink);
+    transition: all 0.12s; line-height: 1.4; font-family: 'DM Sans', sans-serif;
+    min-width: 26px; text-align: center;
+  }
+  .svc-desc-toolbar button:hover { background: var(--border); }
+  .svc-desc-toolbar button.active { background: var(--black); color: white; border-color: var(--black); }
+  .svc-desc-toolbar .toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+  .svc-desc-toolbar input[type="color"] {
+    width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 3px;
+    padding: 1px; cursor: pointer; background: var(--off-white);
+  }
+  .svc-desc-textarea {
+    width: 100%; background: var(--off-white); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 10px; font-size: 12px;
+    font-family: 'DM Sans', sans-serif; outline: none; resize: vertical; min-height: 64px;
+    color: var(--ink); transition: border-color 0.15s; line-height: 1.5;
+  }
+  .svc-desc-textarea:focus { border-color: var(--black); background: var(--white); }
+
+  /* Line item description on doc sheet */
+  .line-desc-note {
+    font-size: 10px; color: var(--subtle); margin-top: 2px; font-style: normal;
+    line-height: 1.45; max-width: 260px; word-break: break-word;
+  }
+
+  /* ── ADDITIONAL ITEMS WITH DESCRIPTION ── */
+  .additional-item {
+    display: grid; grid-template-columns: 1fr 110px 28px;
+    gap: 8px; margin-bottom: 4px; align-items: start;
+  }
+  .additional-item-desc-row { margin-bottom: 10px; }
+  .additional-desc-toggle {
+    background: none; border: none; font-size: 10px; color: var(--subtle);
+    cursor: pointer; padding: 2px 4px; letter-spacing: 0.06em;
+    text-decoration: underline dotted; transition: color 0.15s;
+  }
+  .additional-desc-toggle:hover { color: var(--black); }
+
+  /* ── RIGHT PANEL ── */
+  .preview-panel {
+    background: var(--off-white);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── DOC SHEET ── */
+  .doc-sheet {
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+  }
+
+  .sheet-top {
+    background: var(--black);
+    padding: 28px 36px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .sheet-brand { display: flex; align-items: flex-start; }
+  .sheet-brand svg { height: 72px; width: auto; fill: white; }
+  .sheet-doc-type { text-align: right; }
+  .sheet-doc-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px; color: white; font-weight: 600; letter-spacing: 0.05em;
+  }
+  .sheet-ref {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; margin-top: 4px;
+  }
+
+  .sheet-meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+  .sheet-meta-cell { padding: 16px 20px; border-right: 1px solid var(--border); }
+  .sheet-meta-cell:last-child { border-right: none; }
+  .meta-label { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); margin-bottom: 4px; }
+  .meta-value { font-size: 14px; font-weight: 500; color: var(--ink); min-height: 16px; }
+
+  .sheet-cat-row { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+  .sheet-cat-badge {
+    background: var(--off-white); border: 1px solid var(--border); border-radius: 20px;
+    padding: 3px 10px; font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--subtle);
+  }
+
+  .sheet-items { flex: 1; padding: 0 20px 20px; }
+  .items-header {
+    display: grid; grid-template-columns: 1fr 100px 80px 90px;
+    gap: 8px; padding: 12px 8px 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+  }
+  .items-header span { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
+  .items-header span:not(:first-child) { text-align: right; }
+  .line-item {
+    display: grid; grid-template-columns: 1fr 100px 80px 90px;
+    gap: 8px; padding: 12px 8px; border-bottom: 1px solid var(--highlight); align-items: center;
+  }
+  .line-desc { font-size: 15px; font-weight: 500; }
+  .line-sub { font-size: 12px; color: var(--subtle); margin-top: 1px; }
+  .line-num { text-align: right; font-family: 'DM Mono', monospace; font-size: 14px; color: var(--ink); }
+  .line-empty { padding: 32px 8px; text-align: center; color: var(--mid); font-size: 14px; letter-spacing: 0.1em; font-style: italic; }
+
+  /* Total */
+  .sheet-total {
+    padding: 16px 28px 8px;
+    border-top: 2px solid var(--black);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .total-label { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--subtle); }
+  .total-amount { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: var(--black); }
+
+  /* Amount in words */
+  .sheet-amount-words {
+    padding: 6px 28px 12px;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .amount-words-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--subtle);
+    white-space: nowrap;
+  }
+  .amount-words-value {
+    font-size: 13px; color: var(--ink); font-style: italic;
+  }
+
+  .sheet-vat-note { text-align: right; padding: 0 28px 6px; font-size: 11px; color: var(--subtle); font-style: italic; }
+
+  .payment-due-row {
+    display: none; padding: 10px 28px;
+    background: #fff8f0; border-top: 1px solid #f0e0cc; border-bottom: 1px solid #f0e0cc;
+    font-size: 13px; color: #8a5c2e; font-weight: 500; letter-spacing: 0.06em;
+  }
+  .invoice-mode .payment-due-row { display: flex; justify-content: space-between; }
+  .invoice-mode .valid-row { display: none; }
+
+  .valid-row { padding: 10px 28px; font-size: 12px; color: var(--subtle); border-top: 1px solid var(--border); }
+
+  .sheet-notes {
+    padding: 14px 28px; border-top: 1px solid var(--border);
+    font-size: 13px; color: var(--ink); font-style: italic; min-height: 36px;
+    white-space: pre-wrap; display: none;
+  }
+  .sheet-notes.has-content { display: block; }
+
+  .sheet-footer {
+    background: var(--black); padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto;
+  }
+  .footer-contact { font-size: 12px; color: rgba(255,255,255,0.5); font-family: 'DM Mono', monospace; letter-spacing: 0.05em; line-height: 1.7; }
+  .footer-brand svg { height: 28px; width: auto; fill: rgba(255,255,255,0.25); }
+
+  /* Action buttons */
+  .action-row { display: flex; gap: 10px; margin-top: 20px; width: 210mm; }
+  .btn-action {
+    flex: 1; padding: 12px; border: 1.5px solid var(--black); border-radius: 4px;
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--black); color: white; }
+  .btn-primary:hover { background: #333; }
+  .btn-secondary { background: transparent; color: var(--black); }
+  .btn-secondary:hover { background: var(--black); color: white; }
+
+  /* Save record button */
+  .btn-save-record {
+    flex: none;
+    padding: 12px 16px;
+    border: 1.5px solid #2d6a2d;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.15s;
+    background: transparent; color: #2d6a2d;
+  }
+  .btn-save-record:hover { background: #2d6a2d; color: white; }
+
+  /* ── RECORDS MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(10,10,10,0.6);
+    align-items: flex-start; justify-content: center;
+    padding-top: 60px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white);
+    width: 720px;
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-header {
+    background: var(--black); color: white;
+    padding: 20px 28px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; }
+  .modal-close {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    font-size: 22px; cursor: pointer; line-height: 1; padding: 0;
+  }
+  .modal-close:hover { color: white; }
+  .modal-filter {
+    padding: 16px 28px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .modal-filter button {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 14px; font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+    text-transform: uppercase; cursor: pointer; color: var(--subtle); transition: all 0.15s;
+  }
+  .modal-filter button.active { background: var(--black); border-color: var(--black); color: white; }
+  .modal-filter .filter-count {
+    margin-left: auto; font-size: 10px; color: var(--subtle); font-family: 'DM Mono', monospace;
+  }
+  .modal-body { overflow-y: auto; flex: 1; padding: 16px 28px; }
+  .records-empty { text-align: center; padding: 48px 0; color: var(--mid); font-style: italic; font-size: 13px; }
+  .record-item {
+    border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px;
+    overflow: hidden; transition: box-shadow 0.15s;
+  }
+  .record-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .record-header {
+    display: flex; align-items: center; padding: 12px 16px;
+    background: var(--off-white); gap: 12px;
+  }
+  .record-type-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .record-type-badge.invoice { background: #1a1a1a; color: white; }
+  .record-type-badge.quotation { background: var(--border); color: var(--ink); }
+  .record-num {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--subtle);
+    font-weight: 500; flex-shrink: 0;
+  }
+  .record-client { font-weight: 600; font-size: 13px; flex: 1; }
+  .record-total { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; color: var(--black); }
+  .record-date { font-size: 11px; color: var(--subtle); margin-left: 8px; }
+  .record-actions { display: flex; gap: 6px; margin-left: 8px; }
+  .record-btn {
+    background: none; border: 1px solid var(--border); border-radius: 3px;
+    padding: 4px 10px; font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer; color: var(--subtle); transition: all 0.15s;
+  }
+  .record-btn:hover { border-color: var(--black); color: var(--black); }
+  .record-btn.delete { color: #cc3333; border-color: #e8c0c0; }
+  .record-btn.delete:hover { background: #cc3333; color: white; border-color: #cc3333; }
+  .record-detail {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--subtle); display: none;
+    grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .record-detail.open { display: grid; }
+  .record-detail-cell { }
+  .rd-label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); margin-bottom: 2px; }
+  .rd-value { font-size: 11px; color: var(--ink); }
+
+  /* Confirm dialog */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(10,10,10,0.7); align-items: center; justify-content: center;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: white; border-radius: 8px; padding: 28px 32px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.3); width: 360px; text-align: center;
+  }
+  .confirm-box h3 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 10px; }
+  .confirm-box p { font-size: 13px; color: var(--subtle); margin-bottom: 24px; }
+  .confirm-buttons { display: flex; gap: 10px; justify-content: center; }
+  .confirm-buttons button {
+    padding: 10px 24px; border-radius: 4px; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-cancel-confirm { background: var(--off-white); border: 1px solid var(--border); color: var(--ink); }
+  .btn-cancel-confirm:hover { border-color: var(--black); }
+  .btn-delete-confirm { background: #cc3333; border: 1px solid #cc3333; color: white; }
+  .btn-delete-confirm:hover { background: #aa2222; }
+
+  /* ── INVOICE TOTALS BREAKDOWN ── */
+  .sheet-totals-block {
+    border-top: 2px solid var(--black);
+    padding: 0 28px;
+  }
+  .totals-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--highlight);
+  }
+  .totals-row:last-child { border-bottom: none; }
+  .totals-row-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--subtle);
+  }
+  .totals-row-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .totals-row.grand {
+    padding: 14px 0 10px;
+    border-bottom: none;
+  }
+  .totals-row.grand .totals-row-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--black);
+    letter-spacing: 0.14em;
+  }
+  .totals-row.grand .totals-row-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--black);
+  }
+  .totals-row.advance .totals-row-value { color: #2d6a2d; }
+  .totals-row.balance .totals-row-label { color: var(--black); font-weight: 700; }
+  .totals-row.balance .totals-row-value { font-weight: 700; color: var(--black); font-size: 16px; }
+
+  /* Invoice-only totals block visibility */
+  .invoice-totals-block { display: none; }
+  .invoice-mode .invoice-totals-block { display: block; }
+  /* In quotation mode the original sheet-total shows; in invoice mode hide it */
+  .invoice-mode .sheet-total-simple { display: none; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 400;
+    background: var(--black); color: white;
+    padding: 12px 20px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.05em;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transform: translateY(16px); opacity: 0;
+    transition: all 0.25s; pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    @page {
+      margin: 0;
+      size: A4 portrait;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: white;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .topbar, .form-panel, .action-row, .modal-overlay, .confirm-overlay, .toast { display: none !important; }
+    .layout { display: block; min-height: 0; }
+    .preview-panel { padding: 0; background: white; display: block; }
+    .doc-sheet {
+      box-shadow: none;
+      width: 100%;
+      min-height: 0;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      page-break-after: avoid;
+      page-break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="visible">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <svg viewBox="0 0 260 98" xmlns="http://www.w3.org/2000/svg">
+        <text x="0" y="38" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">WHITE</text>
+        <text x="0" y="76" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">SCREEN</text>
+        <text x="2" y="90" font-family="Arial, sans-serif" font-weight="400" font-size="10" letter-spacing="4">PRODUCTION</text>
+      </svg>
+      <div class="login-brand-sub">Internal Document System</div>
+    </div>
+
+    <div class="login-heading">Sign In</div>
+    <div class="login-sub">Restricted access — authorised personnel only.</div>
+
+    <div class="login-error" id="login-error">Sign-in failed. You may not have access to this system.</div>
+
+    <button class="btn-google" id="btn-google-signin" onclick="doGoogleSignIn()">
+      <div class="spinner"></div>
+      <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.29-8.16 2.29-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div class="login-footer">© White Screen Production · For internal use only</div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 220 70" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="32" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">WHITE</text>
+      <text x="0" y="62" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SCREEN</text>
+    </svg>
+  </div>
+  <div class="doc-toggle">
+    <button class="active" id="btn-quotation" onclick="setDocType('quotation')">Quotation</button>
+    <button id="btn-invoice" onclick="setDocType('invoice')">Invoice</button>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-records" onclick="openRecords()">📋 Records</button>
+    <div class="topbar-ref" id="topbar-ref">—</div>
+    <div class="topbar-user" id="topbar-user" style="display:none;">
+      <img class="topbar-avatar" id="topbar-avatar" src="" alt="">
+      <span class="topbar-user-name" id="topbar-user-name"></span>
+    </div>
+    <button class="btn-signout" onclick="signOut()">Sign Out</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout" id="main-layout">
+
+  <!-- FORM PANEL -->
+  <div class="form-panel">
+
+    <!-- Doc Number & Client Info -->
+    <div class="form-section">
+      <div class="section-title">Document Information</div>
+
+      <!-- Manual Doc Number -->
+      <div class="field">
+        <label id="doc-number-label">Quotation Number</label>
+        <div class="doc-number-field">
+          <input type="text" id="f-docnum" placeholder="e.g. WSP-Q-2026-001" oninput="update()">
+          <button class="btn-regen" onclick="regenRef()" title="Generate new number">↺</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Client Name</label>
+        <input type="text" id="f-client" placeholder="e.g. Himalayan Foods Pvt. Ltd." oninput="update()">
+      </div>
+      <div class="field">
+        <label>Project Name</label>
+        <input type="text" id="f-project" placeholder="e.g. Product Catalogue Shoot" oninput="update()">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="quotation-only">Quotation Date</label>
+          <label class="invoice-only">Invoice Date</label>
+          <input type="date" id="f-date" oninput="update()">
+        </div>
+        <div class="field quotation-only" id="validity-field">
+          <label>Valid For (days)</label>
+          <input type="number" id="f-valid" value="14" min="1" oninput="update()">
+        </div>
+        <div class="field invoice-only" id="due-date-field" style="display:none;">
+          <label>Payment Due Date</label>
+          <input type="date" id="f-due" oninput="update()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Client Contact / Email (optional)</label>
+        <input type="text" id="f-contact" placeholder="email or phone" oninput="update()">
+      </div>
+    </div>
+
+    <!-- Project Category -->
+    <div class="form-section">
+      <div class="section-title">Project Category</div>
+      <div class="cat-list" id="cat-list"></div>
+      <div class="cat-add-row">
+        <input type="text" id="cat-input" placeholder="Add category..." onkeydown="if(event.key==='Enter')addCategory()">
+        <button class="btn-add" style="width:auto;padding:7px 14px;" onclick="addCategory()">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="form-section">
+      <div class="section-title">Services Required</div>
+
+      <!-- Photography -->
+      <div class="service-card" id="card-photo">
+        <div class="service-header" onclick="toggleService('photo')">
+          <div class="service-header-left">
+            <div class="service-check" id="check-photo"></div>
+            <div>
+              <div class="service-name">Photography</div>
+              <div class="service-rate-hint">Rs 15,000 / day default</div>
+            </div>
+          </div>
+        </div>
+        <div class="service-body" id="body-photo">
+          <div class="field-row">
+            <div class="field">
+              <label>Rate per Day (Rs)</label>
+              <input type="number" id="rate-photo" value="15000" oninput="update()">
+            </div>
+            <div class="field">
+              <label>Number of Days</label>
+              <div class="days-control">
+                <button onclick="adjustDays('photo',-1)">−</button>
+                <input type="number" id="days-photo" value="1" min="0" oninput="update()">
+                <button onclick="adjustDays('photo',1)">+</button>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:4px;">
+            <label>Camera &amp; Gear</label>
+            <div class="gear-list" id="gear-photo"></div>
+            <button class="btn-add" onclick="addGear('photo')">+ Add Gear</button>
+          </div>
+          <div class="svc-desc-row" id="desc-area-photo">
+            <div class="svc-desc-label">
+              <span>Service Description <em style="font-weight:400;text-transform:none;letter-spacing:0;">(visible to client)</em></span>
+            </div>
+            <div class="svc-desc-toolbar" id="toolbar-photo">
+              <button title="Bold" onclick="fmtDesc('photo','bold')"><b>B</b></button>
+              <button title="Italic" onclick="fmtDesc('photo','italic')"><i>I</i></button>
+              <button title="Underline" onclick="fmtDesc('photo','underline')"><u>U</u></button>
+              <div class="toolbar-sep"></div>
+              <button title="Normal size" onclick="fmtFontSize('photo','13px')">S</button>
+              <button title="Medium size" onclick="fmtFontSize('photo','15px')">M</button>
+              <button title="Large size" onclick="fmtFontSize('photo','18px')">L</button>
+              <div class="toolbar-sep"></div>
+              <input type="color" id="color-photo" value="#2d2d2d" title="Text color" onchange="fmtColor('photo',this.value)">
+            </div>
+            <textarea class="svc-desc-textarea" id="svc-desc-photo"
+              placeholder="e.g. Full-day product photography session including studio lighting setup, post-processing of up to 50 images..."
+              oninput="syncDescStyle('photo');update()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Videography -->
+      <div class="service-card" id="card-video">
+        <div class="service-header" onclick="toggleService('video')">
+          <div class="service-header-left">
+            <div class="service-check" id="check-video"></div>
+            <div>
+              <div class="service-name">Videography</div>
+              <div class="service-rate-hint">Rs 15,000 / day default</div>
+            </div>
+          </div>
+        </div>
+        <div class="service-body" id="body-video">
+          <div class="field-row">
+            <div class="field">
+              <label>Rate per Day (Rs)</label>
+              <input type="number" id="rate-video" value="15000" oninput="update()">
+            </div>
+            <div class="field">
+              <label>Number of Days</label>
+              <div class="days-control">
+                <button onclick="adjustDays('video',-1)">−</button>
+                <input type="number" id="days-video" value="1" min="0" oninput="update()">
+                <button onclick="adjustDays('video',1)">+</button>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:4px;">
+            <label>Camera &amp; Gear</label>
+            <div class="gear-list" id="gear-video"></div>
+            <button class="btn-add" onclick="addGear('video')">+ Add Gear</button>
+          </div>
+          <div class="svc-desc-row" id="desc-area-video">
+            <div class="svc-desc-label">
+              <span>Service Description <em style="font-weight:400;text-transform:none;letter-spacing:0;">(visible to client)</em></span>
+            </div>
+            <div class="svc-desc-toolbar" id="toolbar-video">
+              <button title="Bold" onclick="fmtDesc('video','bold')"><b>B</b></button>
+              <button title="Italic" onclick="fmtDesc('video','italic')"><i>I</i></button>
+              <button title="Underline" onclick="fmtDesc('video','underline')"><u>U</u></button>
+              <div class="toolbar-sep"></div>
+              <button title="Normal size" onclick="fmtFontSize('video','13px')">S</button>
+              <button title="Medium size" onclick="fmtFontSize('video','15px')">M</button>
+              <button title="Large size" onclick="fmtFontSize('video','18px')">L</button>
+              <div class="toolbar-sep"></div>
+              <input type="color" id="color-video" value="#2d2d2d" title="Text color" onchange="fmtColor('video',this.value)">
+            </div>
+            <textarea class="svc-desc-textarea" id="svc-desc-video"
+              placeholder="e.g. Full-day video shoot with professional cinema camera, includes 2-minute edited highlight reel with color grading..."
+              oninput="syncDescStyle('video');update()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Express Delivery -->
+      <div class="express-row" onclick="toggleExpress()">
+        <div class="service-check" id="check-express"></div>
+        <div class="express-label">Express Delivery</div>
+        <div class="express-hint">Rs 5,000 (flat)</div>
+      </div>
+    </div>
+
+    <!-- Additional Services -->
+    <div class="form-section">
+      <div class="section-title">Additional Services</div>
+      <div id="additional-list"></div>
+      <button class="btn-add" onclick="addAdditional()">+ Add Service</button>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-section">
+      <div class="section-title">Notes &amp; Terms</div>
+      <!-- Advance Amount (invoice only) -->
+      <div class="field invoice-only" id="advance-field">
+        <label>Advance Amount Received (Rs)</label>
+        <input type="number" id="f-advance" placeholder="0" min="0" oninput="update()">
+      </div>
+      <div class="field">
+        <label>Internal Note / Message to Client</label>
+        <textarea id="f-notes" placeholder="Payment terms, special instructions..." oninput="update()"></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PREVIEW PANEL -->
+  <div class="preview-panel" id="preview-panel">
+    <div class="doc-sheet" id="doc-sheet">
+
+      <div class="sheet-top">
+        <div class="sheet-brand">
+          <svg viewBox="0 0 260 98" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="38" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">WHITE</text>
+            <text x="0" y="76" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">SCREEN</text>
+            <text x="2" y="90" font-family="Arial, sans-serif" font-weight="400" font-size="10" letter-spacing="4">PRODUCTION</text>
+          </svg>
+        </div>
+        <div class="sheet-doc-type">
+          <div class="sheet-doc-label" id="sheet-doc-label">QUOTATION</div>
+          <div class="sheet-ref" id="sheet-ref">REF —</div>
+        </div>
+      </div>
+
+      <div class="sheet-meta">
+        <div class="sheet-meta-cell">
+          <div class="meta-label">Client</div>
+          <div class="meta-value" id="m-client">—</div>
+        </div>
+        <div class="sheet-meta-cell">
+          <div class="meta-label">Project</div>
+          <div class="meta-value" id="m-project">—</div>
+        </div>
+        <div class="sheet-meta-cell">
+          <div class="meta-label" id="m-date-label">Date</div>
+          <div class="meta-value" id="m-date">—</div>
+        </div>
+        <div class="sheet-meta-cell">
+          <div class="meta-label" id="m-validity-label">Valid For</div>
+          <div class="meta-value" id="m-validity">14 days</div>
+        </div>
+      </div>
+
+      <div class="sheet-cat-row" id="sheet-cats">
+        <span class="sheet-cat-badge" style="color:var(--mid);border-style:dashed;">No category selected</span>
+      </div>
+
+      <div class="sheet-items">
+        <div class="items-header">
+          <span>Description</span>
+          <span>Rate</span>
+          <span>Days</span>
+          <span>Amount</span>
+        </div>
+        <div id="line-items">
+          <div class="line-empty">Select services above</div>
+        </div>
+      </div>
+
+      <!-- Quotation simple total -->
+      <div class="sheet-total sheet-total-simple">
+        <div class="total-label">Grand Total</div>
+        <div class="total-amount" id="grand-total">Rs 0</div>
+      </div>
+
+      <!-- Invoice breakdown totals (invoice-mode only) -->
+      <div class="invoice-totals-block">
+        <div class="sheet-totals-block">
+          <div class="totals-row">
+            <span class="totals-row-label">Sub Total</span>
+            <span class="totals-row-value" id="inv-subtotal">Rs 0</span>
+          </div>
+          <div class="totals-row advance">
+            <span class="totals-row-label">Advance Received</span>
+            <span class="totals-row-value" id="inv-advance-display">Rs 0</span>
+          </div>
+          <div class="totals-row balance">
+            <span class="totals-row-label">Balance Due</span>
+            <span class="totals-row-value" id="inv-balance">Rs 0</span>
+          </div>
+          <div class="totals-row grand">
+            <span class="totals-row-label">Grand Total</span>
+            <span class="totals-row-value" id="inv-grand-total">Rs 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amount in Words -->
+      <div class="sheet-amount-words">
+        <span class="amount-words-label">In Words:</span>
+        <span class="amount-words-value" id="amount-in-words">Zero Rupees Only</span>
+      </div>
+
+      <div class="sheet-vat-note">Prices are Exclusive of 13% VAT</div>
+
+      <div class="payment-due-row" id="payment-due-row">
+        <span>Payment Due</span>
+        <span id="payment-due-val">—</span>
+      </div>
+
+      <div class="valid-row" id="valid-row">
+        Valid for <strong id="valid-days">14</strong> days from date of issue.
+      </div>
+
+      <div class="sheet-notes" id="sheet-notes"></div>
+
+      <div class="sheet-footer">
+        <div class="footer-contact">
+          +977 9768570000<br>
+          info@whitescreen.com.np<br>
+          www.whitescreen.com.np
+        </div>
+        <div class="footer-brand">
+          <svg viewBox="0 0 260 98" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="38" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">WHITE</text>
+            <text x="0" y="76" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" letter-spacing="-1.5">SCREEN</text>
+            <text x="2" y="90" font-family="Arial, sans-serif" font-weight="400" font-size="10" letter-spacing="4">PRODUCTION</text>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-action btn-secondary" onclick="window.print()">Print</button>
+      <button class="btn-action btn-primary" onclick="downloadPDF()">Download PDF</button>
+      <button class="btn-save-record" onclick="saveRecord()">Save Record</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- RECORDS MODAL -->
+<div class="modal-overlay" id="records-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Records</div>
+      <button class="modal-close" onclick="closeRecords()">×</button>
+    </div>
+    <div class="modal-filter">
+      <button class="active" id="filter-all" onclick="setFilter('all')">All</button>
+      <button id="filter-quotation" onclick="setFilter('quotation')">Quotations</button>
+      <button id="filter-invoice" onclick="setFilter('invoice')">Invoices</button>
+      <span class="filter-count" id="filter-count">0 records</span>
+    </div>
+    <div class="modal-body" id="records-body">
+      <div class="records-empty">No records saved yet. Fill in a document and click "Save Record".</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Delete Record?</h3>
+    <p>This action cannot be undone. The record will be permanently removed.</p>
+    <div class="confirm-buttons">
+      <button class="btn-cancel-confirm" onclick="cancelDelete()">Cancel</button>
+      <button class="btn-delete-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── AUTH (Firebase Google Sign-In) ──
+let currentUser = null;
+
+function doGoogleSignIn() {
+  const btn = document.getElementById('btn-google-signin');
+  const errEl = document.getElementById('login-error');
+  btn.classList.add('loading');
+  errEl.classList.remove('visible');
+
+  window._fbSignInWithPopup(window._fbAuth, window._fbProvider)
+    .then(result => {
+      // onAuthStateChanged will handle the rest
+    })
+    .catch(err => {
+      btn.classList.remove('loading');
+      errEl.classList.add('visible');
+      console.error('Google Sign-In error:', err);
+    });
+}
+
+function signOut() {
+  window._fbSignOut(window._fbAuth).then(() => {
+    currentUser = null;
+    document.getElementById('topbar-user').style.display = 'none';
+    document.getElementById('login-screen').classList.add('visible');
+  });
+}
+
+// Listen for auth state changes
+function initAuth() {
+  window._fbOnAuthStateChanged(window._fbAuth, user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('login-screen').classList.remove('visible');
+      document.getElementById('btn-google-signin').classList.remove('loading');
+      // Show user info in topbar
+      const avatarEl = document.getElementById('topbar-avatar');
+      const nameEl = document.getElementById('topbar-user-name');
+      const userEl = document.getElementById('topbar-user');
+      if (user.photoURL) { avatarEl.src = user.photoURL; avatarEl.style.display = ''; }
+      else { avatarEl.style.display = 'none'; }
+      nameEl.textContent = user.displayName || user.email || '';
+      userEl.style.display = 'flex';
+      // Load records from Firestore for this user
+      loadRecords();
+    } else {
+      currentUser = null;
+      document.getElementById('topbar-user').style.display = 'none';
+      document.getElementById('login-screen').classList.add('visible');
+    }
+  });
+}
+
+// ── STATE ──
+let docType = 'quotation';
+let categories = ['Food Shoot'];
+let services = { photo: false, video: false, express: false };
+let additionalItems = [];
+let gearItems = { photo: [], video: [] };
+let currentTotal = 0;
+
+let records = [];
+let recordFilter = 'all';
+let pendingDeleteId = null;
+
+// ── FIRESTORE STORAGE ──
+async function loadRecords() {
+  if (!currentUser) return;
+  try {
+    const col = window._fbCollection(window._fbDb, 'users', currentUser.uid, 'records');
+    const q = window._fbQuery(col, window._fbOrderBy('savedAt', 'desc'));
+    const snap = await window._fbGetDocs(q);
+    records = snap.docs.map(d => d.data());
+    renderRecords();
+  } catch(e) {
+    console.error('Firestore load error:', e);
+    records = [];
+  }
+}
+
+async function saveRecords() {
+  if (!currentUser) return;
+  // We save only the latest record (the one just pushed to front of records)
+  const record = records[0];
+  if (!record) return;
+  try {
+    const docRef = window._fbDoc(window._fbDb, 'users', currentUser.uid, 'records', String(record.id));
+    await window._fbSetDoc(docRef, record);
+  } catch(e) {
+    console.error('Firestore save error:', e);
+    showToast('Error saving to cloud. Check your connection.');
+  }
+}
+
+async function deleteRecord(id) {
+  if (!currentUser) return;
+  try {
+    const docRef = window._fbDoc(window._fbDb, 'users', currentUser.uid, 'records', String(id));
+    await window._fbDeleteDoc(docRef);
+  } catch(e) {
+    console.error('Firestore delete error:', e);
+    showToast('Error deleting record. Check your connection.');
+  }
+}
+
+// ── REF NUMBER ──
+function generateRef() {
+  const d = new Date();
+  const prefix = docType === 'quotation' ? 'WSP-Q' : 'WSP-INV';
+  return prefix + '-' + d.getFullYear() + '-' + String(Math.floor(Math.random()*900+100));
+}
+function regenRef() {
+  document.getElementById('f-docnum').value = generateRef();
+  update();
+}
+
+// ── DOC TYPE ──
+function setDocType(type) {
+  docType = type;
+  document.getElementById('btn-quotation').classList.toggle('active', type === 'quotation');
+  document.getElementById('btn-invoice').classList.toggle('active', type === 'invoice');
+
+  const layout = document.getElementById('main-layout');
+  layout.classList.toggle('invoice-mode', type === 'invoice');
+
+  document.getElementById('validity-field').style.display = type === 'quotation' ? '' : 'none';
+  document.getElementById('due-date-field').style.display = type === 'invoice' ? '' : 'none';
+
+  document.getElementById('sheet-doc-label').textContent = type === 'quotation' ? 'QUOTATION' : 'INVOICE';
+  document.getElementById('m-date-label').textContent = type === 'quotation' ? 'Date' : 'Invoice Date';
+  document.getElementById('m-validity-label').textContent = type === 'quotation' ? 'Valid For' : 'Payment Due';
+  document.getElementById('doc-number-label').textContent = type === 'quotation' ? 'Quotation Number' : 'Invoice Number';
+
+  // Auto-update ref prefix if field is still default-looking
+  const docnum = document.getElementById('f-docnum').value;
+  if (!docnum || docnum.startsWith('WSP-Q-') || docnum.startsWith('WSP-INV-')) {
+    document.getElementById('f-docnum').value = generateRef();
+  }
+
+  update();
+}
+
+// ── CATEGORIES ──
+function renderCats() {
+  const list = document.getElementById('cat-list');
+  list.innerHTML = categories.map((c,i) => `
+    <div class="cat-tag">${c}
+      <button class="remove-cat" onclick="removeCat(${i})">×</button>
+    </div>`).join('');
+  updateCatBadges();
+}
+function addCategory() {
+  const inp = document.getElementById('cat-input');
+  const v = inp.value.trim();
+  if (v) { categories.push(v); inp.value = ''; renderCats(); update(); }
+}
+function removeCat(i) { categories.splice(i,1); renderCats(); update(); }
+function updateCatBadges() {
+  const el = document.getElementById('sheet-cats');
+  if (categories.length === 0) {
+    el.innerHTML = '<span class="sheet-cat-badge" style="color:var(--mid);border-style:dashed;">No category selected</span>';
+  } else {
+    el.innerHTML = categories.map(c => `<span class="sheet-cat-badge">${c}</span>`).join('');
+  }
+}
+
+// ── SERVICES ──
+function toggleService(svc) {
+  services[svc] = !services[svc];
+  document.getElementById('check-'+svc).classList.toggle('checked', services[svc]);
+  document.getElementById('body-'+svc).classList.toggle('open', services[svc]);
+  update();
+}
+function toggleExpress() {
+  services.express = !services.express;
+  document.getElementById('check-express').classList.toggle('checked', services.express);
+  update();
+}
+function adjustDays(svc, delta) {
+  const inp = document.getElementById('days-'+svc);
+  inp.value = Math.max(0, parseInt(inp.value||0) + delta);
+  update();
+}
+
+// ── GEAR ──
+function addGear(svc) {
+  const id = Date.now();
+  gearItems[svc].push({ id, desc: '', amount: '' });
+  renderGear(svc);
+}
+function removeGear(svc, id) {
+  gearItems[svc] = gearItems[svc].filter(g => g.id !== id);
+  renderGear(svc);
+}
+function renderGear(svc) {
+  const list = document.getElementById('gear-'+svc);
+  list.innerHTML = gearItems[svc].map(g => `
+    <div class="gear-item">
+      <input type="text" placeholder="Gear description" value="${escHtml(g.desc)}"
+        oninput="gearItems['${svc}'].find(x=>x.id===${g.id}).desc=this.value;update()">
+      <input type="number" class="gear-amount" placeholder="Amount" value="${g.amount}"
+        oninput="gearItems['${svc}'].find(x=>x.id===${g.id}).amount=this.value;update()">
+      <button class="remove-btn" onclick="removeGear('${svc}',${g.id})">×</button>
+    </div>`).join('');
+}
+
+// ── ADDITIONAL ──
+function addAdditional() {
+  const id = Date.now();
+  additionalItems.push({ id, desc: '', amount: '', descText: '', showDesc: false, descStyle: {}, descColor: '#2d2d2d' });
+  renderAdditional();
+}
+function removeAdditional(id) {
+  additionalItems = additionalItems.filter(a => a.id !== id);
+  renderAdditional();
+}
+function renderAdditional() {
+  const list = document.getElementById('additional-list');
+  list.innerHTML = additionalItems.map(a => `
+    <div class="additional-item">
+      <input type="text" placeholder="Service name" value="${escHtml(a.desc)}"
+        oninput="additionalItems.find(x=>x.id===${a.id}).desc=this.value;update()">
+      <input type="number" placeholder="Amount (Rs)" value="${a.amount}"
+        oninput="additionalItems.find(x=>x.id===${a.id}).amount=this.value;update()">
+      <button class="remove-btn" onclick="removeAdditional(${a.id})">×</button>
+    </div>
+    <div class="additional-item-desc-row">
+      <button class="additional-desc-toggle" onclick="toggleAddlDesc(${a.id})">
+        ${a.showDesc ? '▾ Hide description' : '▸ Add description'}
+      </button>
+      <div id="addl-desc-wrap-${a.id}" style="display:${a.showDesc ? 'block' : 'none'};margin-top:6px;">
+        <div class="svc-desc-toolbar">
+          <button title="Bold" onclick="fmtAddlDesc(${a.id},'bold')"><b>B</b></button>
+          <button title="Italic" onclick="fmtAddlDesc(${a.id},'italic')"><i>I</i></button>
+          <button title="Underline" onclick="fmtAddlDesc(${a.id},'underline')"><u>U</u></button>
+          <div class="toolbar-sep"></div>
+          <button title="Small" onclick="fmtAddlFontSize(${a.id},'13px')">S</button>
+          <button title="Medium" onclick="fmtAddlFontSize(${a.id},'15px')">M</button>
+          <button title="Large" onclick="fmtAddlFontSize(${a.id},'18px')">L</button>
+          <div class="toolbar-sep"></div>
+          <input type="color" value="${a.descColor||'#2d2d2d'}" title="Text color"
+            onchange="additionalItems.find(x=>x.id===${a.id}).descColor=this.value;additionalItems.find(x=>x.id===${a.id}).descStyle=Object.assign({},additionalItems.find(x=>x.id===${a.id}).descStyle,{color:this.value});update()">
+        </div>
+        <textarea class="svc-desc-textarea" id="addl-desc-${a.id}" placeholder="Describe this service for the client..."
+          oninput="additionalItems.find(x=>x.id===${a.id}).descText=this.value;update()"
+          style="font-size:${(a.descStyle&&a.descStyle.fontSize)||'13px'};font-weight:${(a.descStyle&&a.descStyle.fontWeight)||'normal'};font-style:${(a.descStyle&&a.descStyle.fontStyle)||'normal'};color:${(a.descStyle&&a.descStyle.color)||'#2d2d2d'}">${escHtml(a.descText||'')}</textarea>
+      </div>
+    </div>`).join('');
+}
+
+// ── FORMAT ──
+function fmt(n) { return 'Rs ' + Number(n).toLocaleString('en-NP'); }
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+// ── AMOUNT IN WORDS ──
+const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+              'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+              'Seventeen','Eighteen','Nineteen'];
+const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+
+function numToWords(n) {
+  n = Math.round(n);
+  if (n === 0) return 'Zero';
+  if (n < 0) return 'Minus ' + numToWords(-n);
+
+  let result = '';
+
+  if (n >= 10000000) {
+    result += numToWords(Math.floor(n / 10000000)) + ' Crore ';
+    n %= 10000000;
+  }
+  if (n >= 100000) {
+    result += numToWords(Math.floor(n / 100000)) + ' Lakh ';
+    n %= 100000;
+  }
+  if (n >= 1000) {
+    result += numToWords(Math.floor(n / 1000)) + ' Thousand ';
+    n %= 1000;
+  }
+  if (n >= 100) {
+    result += ones[Math.floor(n / 100)] + ' Hundred ';
+    n %= 100;
+  }
+  if (n >= 20) {
+    result += tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '') + ' ';
+    n = 0;
+  } else if (n > 0) {
+    result += ones[n] + ' ';
+  }
+
+  return result.trim();
+}
+
+function amountInWords(total) {
+  if (!total || total === 0) return 'Zero Rupees Only';
+  const rupees = Math.floor(total);
+  const paisa = Math.round((total - rupees) * 100);
+  let words = numToWords(rupees) + ' Rupee' + (rupees !== 1 ? 's' : '');
+  if (paisa > 0) {
+    words += ' and ' + numToWords(paisa) + ' Paisa';
+  }
+  return words + ' Only';
+}
+
+// ── ESCAPE HTML ──
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── SERVICE DESCRIPTION STATE ──
+const svcDescStyle = {
+  photo: { fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', fontSize: '13px', color: '#2d2d2d' },
+  video: { fontWeight: 'normal', fontStyle: 'normal', textDecoration: 'none', fontSize: '13px', color: '#2d2d2d' }
+};
+
+function syncDescStyle(svc) {
+  const ta = document.getElementById('svc-desc-'+svc);
+  const s = svcDescStyle[svc];
+  ta.style.fontWeight = s.fontWeight;
+  ta.style.fontStyle = s.fontStyle;
+  ta.style.textDecoration = s.textDecoration;
+  ta.style.fontSize = s.fontSize;
+  ta.style.color = s.color;
+}
+
+function fmtDesc(svc, cmd) {
+  const s = svcDescStyle[svc];
+  if (cmd === 'bold') s.fontWeight = (s.fontWeight === 'bold') ? 'normal' : 'bold';
+  if (cmd === 'italic') s.fontStyle = (s.fontStyle === 'italic') ? 'normal' : 'italic';
+  if (cmd === 'underline') s.textDecoration = (s.textDecoration === 'underline') ? 'none' : 'underline';
+  syncDescStyle(svc);
+  updateToolbarState(svc);
+  update();
+}
+
+function fmtFontSize(svc, size) {
+  svcDescStyle[svc].fontSize = size;
+  syncDescStyle(svc);
+  update();
+}
+
+function fmtColor(svc, color) {
+  svcDescStyle[svc].color = color;
+  syncDescStyle(svc);
+  update();
+}
+
+function updateToolbarState(svc) {
+  const s = svcDescStyle[svc];
+  const toolbar = document.getElementById('toolbar-'+svc);
+  if (!toolbar) return;
+  const btns = toolbar.querySelectorAll('button');
+  btns[0].classList.toggle('active', s.fontWeight === 'bold');
+  btns[1].classList.toggle('active', s.fontStyle === 'italic');
+  btns[2].classList.toggle('active', s.textDecoration === 'underline');
+}
+
+// ── ADDITIONAL ITEM DESCRIPTION HELPERS ──
+function toggleAddlDesc(id) {
+  const a = additionalItems.find(x => x.id === id);
+  if (!a) return;
+  a.showDesc = !a.showDesc;
+  renderAdditional();
+}
+
+function fmtAddlDesc(id, cmd) {
+  const a = additionalItems.find(x => x.id === id);
+  if (!a) return;
+  if (!a.descStyle) a.descStyle = {};
+  if (cmd === 'bold') a.descStyle.fontWeight = (a.descStyle.fontWeight === 'bold') ? 'normal' : 'bold';
+  if (cmd === 'italic') a.descStyle.fontStyle = (a.descStyle.fontStyle === 'italic') ? 'normal' : 'italic';
+  if (cmd === 'underline') a.descStyle.textDecoration = (a.descStyle.textDecoration === 'underline') ? 'none' : 'underline';
+  renderAdditional();
+  update();
+}
+
+function fmtAddlFontSize(id, size) {
+  const a = additionalItems.find(x => x.id === id);
+  if (!a) return;
+  if (!a.descStyle) a.descStyle = {};
+  a.descStyle.fontSize = size;
+  renderAdditional();
+  update();
+}
+
+// ── MAIN UPDATE ──
+function update() {
+  const client = document.getElementById('f-client').value.trim();
+  const project = document.getElementById('f-project').value.trim();
+  const date = document.getElementById('f-date').value;
+  const validDays = document.getElementById('f-valid').value || '14';
+  const dueDate = document.getElementById('f-due').value;
+  const notes = document.getElementById('f-notes').value.trim();
+  const docnum = document.getElementById('f-docnum').value.trim();
+
+  // Ref
+  document.getElementById('sheet-ref').textContent = docnum ? 'REF ' + docnum : 'REF —';
+  document.getElementById('topbar-ref').textContent = docnum || '—';
+
+  // Meta
+  document.getElementById('m-client').textContent = client || '—';
+  document.getElementById('m-project').textContent = project || '—';
+  document.getElementById('m-date').textContent = fmtDate(date);
+
+  if (docType === 'quotation') {
+    document.getElementById('m-validity').textContent = validDays + ' days';
+    document.getElementById('valid-days').textContent = validDays;
+  } else {
+    document.getElementById('m-validity').textContent = fmtDate(dueDate);
+    document.getElementById('payment-due-val').textContent = fmtDate(dueDate);
+  }
+
+  // Build line items
+  const lines = [];
+  let total = 0;
+
+  if (services.photo) {
+    const rate = parseFloat(document.getElementById('rate-photo').value) || 0;
+    const days = parseFloat(document.getElementById('days-photo').value) || 0;
+    const sub = rate * days;
+    const descText = document.getElementById('svc-desc-photo') ? document.getElementById('svc-desc-photo').value.trim() : '';
+    total += sub;
+    lines.push({ desc: 'Photography', sub: `${fmt(rate)} × ${days} day${days!==1?'s':''}`, rate, days, amount: sub, descNote: descText, descStyle: {...svcDescStyle.photo} });
+    gearItems.photo.forEach(g => {
+      const a = parseFloat(g.amount) || 0;
+      if (g.desc || a) { total += a; lines.push({ desc: g.desc || 'Gear', sub: null, rate: null, days: null, amount: a }); }
+    });
+  }
+  if (services.video) {
+    const rate = parseFloat(document.getElementById('rate-video').value) || 0;
+    const days = parseFloat(document.getElementById('days-video').value) || 0;
+    const sub = rate * days;
+    const descText = document.getElementById('svc-desc-video') ? document.getElementById('svc-desc-video').value.trim() : '';
+    total += sub;
+    lines.push({ desc: 'Videography', sub: `${fmt(rate)} × ${days} day${days!==1?'s':''}`, rate, days, amount: sub, descNote: descText, descStyle: {...svcDescStyle.video} });
+    gearItems.video.forEach(g => {
+      const a = parseFloat(g.amount) || 0;
+      if (g.desc || a) { total += a; lines.push({ desc: g.desc || 'Gear', sub: null, rate: null, days: null, amount: a }); }
+    });
+  }
+  if (services.express) {
+    total += 5000;
+    lines.push({ desc: 'Express Delivery', sub: 'Flat rate', rate: null, days: null, amount: 5000 });
+  }
+  additionalItems.forEach(a => {
+    const amt = parseFloat(a.amount) || 0;
+    if (a.desc || amt) {
+      total += amt;
+      lines.push({ desc: a.desc || 'Additional Service', sub: null, rate: null, days: null, amount: amt,
+        descNote: a.descText||'', descStyle: a.descStyle||{} });
+    }
+  });
+
+  // Render lines
+  const el = document.getElementById('line-items');
+  if (lines.length === 0) {
+    el.innerHTML = '<div class="line-empty">Select services above</div>';
+  } else {
+    el.innerHTML = lines.map(l => {
+      let noteHtml = '';
+      if (l.descNote && l.descNote.trim()) {
+        const s = l.descStyle || {};
+        const style = [
+          s.fontSize ? `font-size:${s.fontSize}` : 'font-size:10px',
+          s.fontWeight ? `font-weight:${s.fontWeight}` : '',
+          s.fontStyle ? `font-style:${s.fontStyle}` : '',
+          s.textDecoration ? `text-decoration:${s.textDecoration}` : '',
+          s.color ? `color:${s.color}` : 'color:var(--subtle)'
+        ].filter(Boolean).join(';');
+        noteHtml = `<div class="line-desc-note" style="${style}">${escHtml(l.descNote).replace(/\n/g,'<br>')}</div>`;
+      }
+      return `
+      <div class="line-item">
+        <div>
+          <div class="line-desc">${l.desc}</div>
+          ${l.sub ? `<div class="line-sub">${l.sub}</div>` : ''}
+          ${noteHtml}
+        </div>
+        <div class="line-num">${l.rate !== null ? fmt(l.rate) : ''}</div>
+        <div class="line-num">${l.days !== null ? l.days : ''}</div>
+        <div class="line-num">${fmt(l.amount)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  currentTotal = total;
+
+  if (docType === 'invoice') {
+    const advance = parseFloat(document.getElementById('f-advance').value) || 0;
+    const balance = Math.max(0, total - advance);
+    document.getElementById('inv-subtotal').textContent = fmt(total);
+    document.getElementById('inv-advance-display').textContent = fmt(advance);
+    document.getElementById('inv-balance').textContent = fmt(balance);
+    document.getElementById('inv-grand-total').textContent = fmt(total);
+    document.getElementById('amount-in-words').textContent = amountInWords(balance > 0 ? balance : total);
+  } else {
+    document.getElementById('grand-total').textContent = fmt(total);
+    document.getElementById('amount-in-words').textContent = amountInWords(total);
+  }
+
+  // Notes
+  const notesEl = document.getElementById('sheet-notes');
+  notesEl.textContent = notes;
+  notesEl.classList.toggle('has-content', notes.length > 0);
+}
+
+// ── PDF ──
+function downloadPDF() {
+  const label = docType === 'quotation' ? 'Quotation' : 'Invoice';
+  const client = document.getElementById('f-client').value.trim() || 'Client';
+  const num = document.getElementById('f-docnum').value.trim() || '';
+  document.title = `WSP-${label}-${client}${num ? '-'+num : ''}`;
+  window.print();
+}
+
+// ── SAVE RECORD ──
+async function saveRecord() {
+  const docnum = document.getElementById('f-docnum').value.trim();
+  const client = document.getElementById('f-client').value.trim();
+  const project = document.getElementById('f-project').value.trim();
+  const date = document.getElementById('f-date').value;
+  const notes = document.getElementById('f-notes').value.trim();
+  const dueDate = document.getElementById('f-due').value;
+  const validDays = document.getElementById('f-valid').value || '14';
+  const advance = parseFloat(document.getElementById('f-advance').value) || 0;
+
+  if (!client && !docnum) {
+    showToast('Please enter at least a client name or document number before saving.');
+    return;
+  }
+
+  // Collect services summary
+  const svcList = [];
+  if (services.photo) svcList.push('Photography');
+  if (services.video) svcList.push('Videography');
+  if (services.express) svcList.push('Express Delivery');
+  additionalItems.forEach(a => { if (a.desc) svcList.push(a.desc); });
+
+  const record = {
+    id: Date.now(),
+    type: docType,
+    docnum: docnum || '—',
+    client: client || 'Unnamed Client',
+    project: project || '—',
+    date: date || '',
+    dueDate: dueDate || '',
+    validDays,
+    notes,
+    total: currentTotal,
+    advance,
+    services: svcList,
+    cats: [...categories],
+    savedAt: new Date().toISOString(),
+    rawServices: { ...services },
+    rates: {
+      photo: document.getElementById('rate-photo').value,
+      video: document.getElementById('rate-video').value
+    },
+    days: {
+      photo: document.getElementById('days-photo').value,
+      video: document.getElementById('days-video').value
+    },
+    descs: {
+      photo: document.getElementById('svc-desc-photo') ? document.getElementById('svc-desc-photo').value : '',
+      video: document.getElementById('svc-desc-video') ? document.getElementById('svc-desc-video').value : ''
+    },
+    gearItems: JSON.parse(JSON.stringify(gearItems)),
+    additionalItems: JSON.parse(JSON.stringify(additionalItems)),
+    svcDescStyle: JSON.parse(JSON.stringify(svcDescStyle))
+  };
+
+  records.unshift(record);
+  await saveRecords();
+  renderRecords();
+  showToast('Record saved to cloud successfully.');
+}
+
+// ── RECORDS MODAL ──
+function openRecords() {
+  loadRecords();
+  renderRecords();
+  document.getElementById('records-modal').classList.add('open');
+}
+function closeRecords() {
+  document.getElementById('records-modal').classList.remove('open');
+}
+document.getElementById('records-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeRecords();
+});
+
+function setFilter(f) {
+  recordFilter = f;
+  ['all','quotation','invoice'].forEach(x => {
+    document.getElementById('filter-'+x).classList.toggle('active', x === f);
+  });
+  renderRecords();
+}
+
+function renderRecords() {
+  const body = document.getElementById('records-body');
+  const filtered = recordFilter === 'all' ? records : records.filter(r => r.type === recordFilter);
+  document.getElementById('filter-count').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
+
+  if (filtered.length === 0) {
+    body.innerHTML = '<div class="records-empty">' +
+      (records.length === 0 ? 'No records saved yet. Fill in a document and click "Save Record".' : 'No records match this filter.') +
+      '</div>';
+    return;
+  }
+
+  body.innerHTML = filtered.map(r => {
+    const dateStr = r.date ? fmtDate(r.date) : '—';
+    const savedDate = new Date(r.savedAt).toLocaleDateString('en-NP', { day:'2-digit', month:'short', year:'numeric' });
+    return `
+    <div class="record-item" id="rec-${r.id}">
+      <div class="record-header">
+        <span class="record-type-badge ${r.type}">${r.type}</span>
+        <span class="record-num">${r.docnum}</span>
+        <span class="record-client">${r.client}</span>
+        <span class="record-total">${fmt(r.total)}</span>
+        <span class="record-date">${dateStr}</span>
+        <div class="record-actions">
+          <button class="record-btn" onclick="toggleRecordDetail(${r.id})">Details</button>
+          <button class="record-btn" onclick="loadRecord(${r.id})">Load</button>
+          <button class="record-btn delete" onclick="askDelete(${r.id})">Delete</button>
+        </div>
+      </div>
+      <div class="record-detail" id="detail-${r.id}">
+        <div class="record-detail-cell"><div class="rd-label">Project</div><div class="rd-value">${r.project}</div></div>
+        <div class="record-detail-cell"><div class="rd-label">Services</div><div class="rd-value">${r.services.length ? r.services.join(', ') : '—'}</div></div>
+        <div class="record-detail-cell"><div class="rd-label">Categories</div><div class="rd-value">${r.cats.length ? r.cats.join(', ') : '—'}</div></div>
+        <div class="record-detail-cell"><div class="rd-label">Saved On</div><div class="rd-value">${savedDate}</div></div>
+        ${r.notes ? `<div class="record-detail-cell" style="grid-column:span 2"><div class="rd-label">Notes</div><div class="rd-value">${r.notes}</div></div>` : ''}
+        ${r.type === 'invoice' && r.dueDate ? `<div class="record-detail-cell"><div class="rd-label">Due Date</div><div class="rd-value">${fmtDate(r.dueDate)}</div></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleRecordDetail(id) {
+  const detail = document.getElementById('detail-'+id);
+  detail.classList.toggle('open');
+}
+
+function loadRecord(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+
+  setDocType(r.type);
+  document.getElementById('f-docnum').value = r.docnum === '—' ? '' : r.docnum;
+  document.getElementById('f-client').value = r.client === 'Unnamed Client' ? '' : r.client;
+  document.getElementById('f-project').value = r.project === '—' ? '' : r.project;
+  document.getElementById('f-date').value = r.date;
+  document.getElementById('f-notes').value = r.notes;
+  if (r.type === 'invoice') {
+    document.getElementById('f-due').value = r.dueDate;
+    document.getElementById('f-advance').value = r.advance || '';
+  }
+  if (r.type === 'quotation') document.getElementById('f-valid').value = r.validDays;
+  categories = [...r.cats];
+  renderCats();
+
+  if (r.rawServices) {
+    services = { ...r.rawServices };
+    document.getElementById('check-photo').classList.toggle('checked', services.photo);
+    document.getElementById('body-photo').classList.toggle('open', services.photo);
+    document.getElementById('check-video').classList.toggle('checked', services.video);
+    document.getElementById('body-video').classList.toggle('open', services.video);
+    document.getElementById('check-express').classList.toggle('checked', services.express);
+
+    if (r.rates) {
+      document.getElementById('rate-photo').value = r.rates.photo || 15000;
+      document.getElementById('rate-video').value = r.rates.video || 15000;
+    }
+    if (r.days) {
+      document.getElementById('days-photo').value = r.days.photo || 1;
+      document.getElementById('days-video').value = r.days.video || 1;
+    }
+    if (r.descs) {
+      if (document.getElementById('svc-desc-photo')) document.getElementById('svc-desc-photo').value = r.descs.photo || '';
+      if (document.getElementById('svc-desc-video')) document.getElementById('svc-desc-video').value = r.descs.video || '';
+    }
+    if (r.gearItems) {
+      gearItems = JSON.parse(JSON.stringify(r.gearItems));
+      renderGear('photo');
+      renderGear('video');
+    }
+    if (r.additionalItems) {
+      additionalItems = JSON.parse(JSON.stringify(r.additionalItems));
+      renderAdditional();
+    }
+    if (r.svcDescStyle) {
+      Object.assign(svcDescStyle, r.svcDescStyle);
+      syncDescStyle('photo');
+      syncDescStyle('video');
+      updateToolbarState('photo');
+      updateToolbarState('video');
+    }
+    showToast('Record and services loaded.');
+  } else {
+    showToast('Old record loaded. Services must be re-selected manually.');
+  }
+
+  update();
+  closeRecords();
+}
+
+// ── DELETE ──
+function askDelete(id) {
+  pendingDeleteId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function cancelDelete() {
+  pendingDeleteId = null;
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+async function confirmDelete() {
+  if (pendingDeleteId !== null) {
+    records = records.filter(r => r.id !== pendingDeleteId);
+    await deleteRecord(pendingDeleteId);
+    renderRecords();
+    showToast('Record deleted.');
+  }
+  pendingDeleteId = null;
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──
+// Wait for Firebase module to be ready, then init auth listener
+window.addEventListener('load', () => {
+  if (window._fbOnAuthStateChanged) {
+    initAuth();
+  } else {
+    // Retry briefly if module hasn't attached yet
+    setTimeout(initAuth, 300);
+  }
+});
+document.getElementById('f-date').valueAsDate = new Date();
+document.getElementById('f-docnum').value = generateRef();
+renderCats();
+update();
+</script>
+</body>
+</html>
