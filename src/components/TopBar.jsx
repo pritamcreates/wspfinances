@@ -15,7 +15,7 @@ export default function TopBar({ user }) {
     <div className="topbar">
       <div className="topbar-left">
         <div className="topbar-brand">
-          <img src="/whitelogo.png" alt="White Screen" className="topbar-logo" />
+          <img src="whitelogo.png" alt="White Screen" className="topbar-logo" />
         </div>
         
         <div className="doc-toggles">

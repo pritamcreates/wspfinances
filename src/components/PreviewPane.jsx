@@ -73,7 +73,7 @@ export default function PreviewPane({ user }) {
         {/* Header */}
         <div className="sheet-top">
           <div className="sheet-brand">
-            <img src="/blacklogo.png" alt="White Screen Production" style={{ height: '75px', objectFit: 'contain' }} />
+            <img src="blacklogo.png" alt="White Screen Production" style={{ height: '75px', objectFit: 'contain' }} />
           </div>
           <div className="sheet-doc-type">
             <div className="sheet-doc-label">{docType === 'quotation' ? 'QUOTATION' : 'INVOICE'}</div>
@@ -201,7 +201,7 @@ export default function PreviewPane({ user }) {
               <p><strong>Bank:</strong> Nabil Bank</p>
               <p><strong>Branch:</strong> Maharajgunj</p>
             </div>
-            <img src="/QR.png" alt="Bank QR" className="qr-img" />
+            <img src="qr.png" alt="Bank QR" className="qr-img" />
           </div>
         )}
 
@@ -222,7 +222,7 @@ export default function PreviewPane({ user }) {
 
         <div className="sheet-signature">
           <div className="signature-wrapper">
-            <img src="/sign.png" alt="Authorized Signature" className="signature-img" />
+            <img src="sign.png" alt="Authorized Signature" className="signature-img" />
             <div className="signature-line">Authorized Signature</div>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function PreviewPane({ user }) {
             )}
           </div>
           <div className="footer-brand">
-            <img src="/blacklogo.png" alt="White Screen" style={{ height: '32px', objectFit: 'contain', opacity: 0.3 }} />
+            <img src="blacklogo.png" alt="White Screen" style={{ height: '32px', objectFit: 'contain', opacity: 0.3 }} />
           </div>
         </div>
       </div>
