@@ -223,12 +223,14 @@ export default function PreviewPane({ user }) {
 
         {notes && <div className="sheet-notes">{notes}</div>}
 
-        <div className="sheet-signature">
-          <div className="signature-wrapper">
-            <img src={signImg} alt="Authorized Signature" className="signature-img" />
-            <div className="signature-line">Authorized Signature</div>
+        {docType !== 'quotation' && (
+          <div className="sheet-signature">
+            <div className="signature-wrapper">
+              <img src={signImg} alt="Authorized Signature" className="signature-img" />
+              <div className="signature-line">Authorized Signature</div>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="sheet-footer">
           <div className="footer-contact">
