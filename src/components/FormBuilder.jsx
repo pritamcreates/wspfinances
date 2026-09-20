@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, RefreshCcw, Bold, Italic, Type } from 'lucide-react';
+import { Plus, Trash2, RefreshCcw, Bold, Italic, Type, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import '../styles/formbuilder.css';
 
@@ -8,7 +8,8 @@ export default function FormBuilder() {
     docType, docNum, setDocNum, client, setClient, project, setProject,
     date, setDate, validDays, setValidDays, dueDate, setDueDate,
     notes, setNotes, advance, setAdvance, categories, setCategories,
-    dynamicServices, setDynamicServices
+    dynamicServices, setDynamicServices,
+    discount, setDiscount, tdsEnabled, setTdsEnabled
   } = useAppContext();
 
   const [catInput, setCatInput] = useState('');
@@ -67,6 +68,29 @@ export default function FormBuilder() {
     setDynamicServices(dynamicServices.map(s => {
       if (s.id === id) {
         return { ...s, days: Math.max(0, (Number(s.days) || 0) + delta) };
+      }
+      return s;
+    }));
+  };
+
+  const moveService = (index, direction) => {
+    if (index + direction < 0 || index + direction >= dynamicServices.length) return;
+    const newServices = [...dynamicServices];
+    const temp = newServices[index];
+    newServices[index] = newServices[index + direction];
+    newServices[index + direction] = temp;
+    setDynamicServices(newServices);
+  };
+
+  const moveGear = (svcId, gearIndex, direction) => {
+    setDynamicServices(dynamicServices.map(s => {
+      if (s.id === svcId) {
+        if (gearIndex + direction < 0 || gearIndex + direction >= (s.gear || []).length) return s;
+        const newGear = [...(s.gear || [])];
+        const temp = newGear[gearIndex];
+        newGear[gearIndex] = newGear[gearIndex + direction];
+        newGear[gearIndex + direction] = temp;
+        return { ...s, gear: newGear };
       }
       return s;
     }));
@@ -168,7 +192,7 @@ export default function FormBuilder() {
       {/* Services */}
       <div className="form-section glass-panel">
         <h3 className="section-title">Services</h3>
-        {dynamicServices.map((svc) => (
+        {dynamicServices.map((svc, sIdx) => (
           <div key={svc.id} className="service-card active">
             <div className="service-header" style={{ paddingBottom: '8px' }}>
               <div className="input-group">
@@ -179,6 +203,12 @@ export default function FormBuilder() {
                   onChange={e => updateService(svc.id, 'name', e.target.value)}
                   style={{ fontSize: '15px', fontWeight: 600 }}
                 />
+                <button className="btn-icon" onClick={() => moveService(sIdx, -1)} disabled={sIdx === 0}>
+                  <ChevronUp size={16} />
+                </button>
+                <button className="btn-icon" onClick={() => moveService(sIdx, 1)} disabled={sIdx === dynamicServices.length - 1}>
+                  <ChevronDown size={16} />
+                </button>
                 <button className="btn-icon danger" onClick={() => removeService(svc.id)}>
                   <Trash2 size={16} />
                 </button>
@@ -213,7 +243,7 @@ export default function FormBuilder() {
               {/* Gear / Additional Items for this Service */}
               <div className="field gear-section">
                 <label>Add-ons / Gear</label>
-                {(svc.gear || []).map(g => (
+                {(svc.gear || []).map((g, gIdx) => (
                   <div key={g.id} className="gear-item">
                     <input 
                       type="text" 
@@ -227,6 +257,8 @@ export default function FormBuilder() {
                       value={g.amount} 
                       onChange={e => updateGear(svc.id, g.id, 'amount', e.target.value)} 
                     />
+                    <button className="btn-icon" onClick={() => moveGear(svc.id, gIdx, -1)} disabled={gIdx === 0}><ChevronUp size={14}/></button>
+                    <button className="btn-icon" onClick={() => moveGear(svc.id, gIdx, 1)} disabled={gIdx === (svc.gear || []).length - 1}><ChevronDown size={14}/></button>
                     <button className="btn-icon danger" onClick={() => removeGear(svc.id, g.id)}><Trash2 size={14}/></button>
                   </div>
                 ))}
@@ -281,9 +313,29 @@ export default function FormBuilder() {
         </button>
       </div>
 
-      {/* Notes & Terms */}
+      {/* Financials & Terms */}
       <div className="form-section glass-panel">
-        <h3 className="section-title">Notes & Terms</h3>
+        <h3 className="section-title">Financials & Notes</h3>
+        
+        <div className="field-row">
+          <div className="field mb-3">
+            <label>Global Discount (Rs)</label>
+            <input type="number" value={discount} onChange={e => setDiscount(Number(e.target.value))} placeholder="e.g. 5000" />
+          </div>
+          <div className="field mb-3" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <label>Apply TDS (1.5%)</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '10px' }}>
+              <input 
+                type="checkbox" 
+                checked={tdsEnabled} 
+                onChange={e => setTdsEnabled(e.target.checked)} 
+                style={{ width: 'auto', margin: 0 }}
+              />
+              <span style={{ fontWeight: 'normal', color: 'var(--text-secondary)' }}>Deduct TDS before balance</span>
+            </label>
+          </div>
+        </div>
+
         {docType === 'invoice' && (
           <div className="field mb-3">
             <label>Advance Received (Rs)</label>

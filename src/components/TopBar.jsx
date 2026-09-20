@@ -2,7 +2,7 @@ import React from 'react';
 import { LogOut, FileText, FileSpreadsheet, ClipboardList } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { signOut, auth } from '../lib/firebase';
-import whiteLogo from '../assets/whitelogo.png';
+const whiteLogo = '/wspfinances/logowhite.png';
 import '../styles/topbar.css';
 
 export default function TopBar({ user }) {

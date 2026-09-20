@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, Loader2 } from 'lucide-react';
 import { auth, googleProvider, signInWithPopup } from '../lib/firebase';
-import whiteLogo from '../assets/whitelogo.png';
+const whiteLogo = '/wspfinances/logowhite.png';
 import '../styles/auth.css';
 
 export default function AuthScreen({ onSignIn }) {
@@ -27,7 +27,7 @@ export default function AuthScreen({ onSignIn }) {
   return (
     <div className="auth-container">
       <div className="auth-card glass-panel">
-        <div className="auth-brand" style={{ marginBottom: '40px' }}>
+        <div className="auth-brand" style={{ marginBottom: '20px' }}>
           <img src={whiteLogo} alt="White Screen Production" style={{ height: '80px', objectFit: 'contain' }} />
         </div>
 

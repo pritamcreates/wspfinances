@@ -50,7 +50,7 @@ body {
 
 .right-panel {
   flex: 1;
-  background: #000;
+  background: #1a1c23;
   display: flex;
   flex-direction: column;
   position: relative;

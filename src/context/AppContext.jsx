@@ -16,6 +16,8 @@ export function AppProvider({ children }) {
   
   const [categories, setCategories] = useState(['Food Shoot']);
   const [dynamicServices, setDynamicServices] = useState([]);
+  const [discount, setDiscount] = useState(0);
+  const [tdsEnabled, setTdsEnabled] = useState(false);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -32,7 +34,7 @@ export function AppProvider({ children }) {
         subtotal += baseAmount;
         lines.push({
           desc: svc.name || 'Unnamed Service',
-          sub: rate > 0 && days > 0 ? `Rs ${rate.toLocaleString('en-NP')} × ${days} day${days !== 1 ? 's' : ''}` : '',
+          sub: '',
           rate: rate,
           days: days,
           amount: baseAmount,
@@ -53,12 +55,25 @@ export function AppProvider({ children }) {
       }
     });
 
-    const vatAmount = subtotal * 0.13;
-    const grandTotal = subtotal + vatAmount;
-    const balance = Math.max(0, grandTotal - (Number(advance) || 0));
+    const discountAmt = Number(discount) || 0;
+    const taxableAmount = Math.max(0, subtotal - discountAmt);
+    const vatAmount = taxableAmount * 0.13;
+    const grandTotal = taxableAmount + vatAmount;
+    const tdsAmount = tdsEnabled ? (taxableAmount * 0.015) : 0;
+    const balance = Math.max(0, grandTotal - tdsAmount - (Number(advance) || 0));
 
-    return { subtotal, vatAmount, grandTotal, balance, advance: Number(advance) || 0, lines };
-  }, [dynamicServices, advance]);
+    return { 
+      subtotal, 
+      discountAmt,
+      taxableAmount,
+      vatAmount, 
+      grandTotal, 
+      tdsAmount,
+      balance, 
+      advance: Number(advance) || 0, 
+      lines 
+    };
+  }, [dynamicServices, advance, discount, tdsEnabled]);
 
   // Generate Reference
   useEffect(() => {
@@ -82,6 +97,8 @@ export function AppProvider({ children }) {
     advance, setAdvance,
     categories, setCategories,
     dynamicServices, setDynamicServices,
+    discount, setDiscount,
+    tdsEnabled, setTdsEnabled,
     totals
   };
 
