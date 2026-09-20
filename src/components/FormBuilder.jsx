@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, RefreshCcw, Bold, Italic, Type, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, RefreshCcw, Bold, Italic, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import '../styles/formbuilder.css';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, FileText, Trash2, DownloadCloud } from 'lucide-react';
+import { X, FileText, Trash2, DownloadCloud } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
-import { db, collection, getDocs, query, orderBy, deleteDoc, doc, setDoc } from '../lib/firebase';
+import { db, collection, getDocs, query, orderBy, deleteDoc, doc } from '../lib/firebase';
 import { fmt, fmtDate } from '../lib/utils';
 import '../styles/records.css';
 
@@ -17,6 +17,7 @@ export default function RecordsModal({ user }) {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isRecordsOpen && user) {
       loadRecords();

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { auth, googleProvider, signInWithPopup } from '../lib/firebase';
 const whiteLogo = '/wspfinances/logowhite.png';
 import '../styles/auth.css';

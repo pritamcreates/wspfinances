@@ -76,6 +76,7 @@ export function AppProvider({ children }) {
   }, [dynamicServices, advance, discount, tdsEnabled]);
 
   // Generate Reference
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!docNum || docNum.startsWith('WSP-Q-') || docNum.startsWith('WSP-INV-')) {
       const prefix = docType === 'quotation' ? 'WSP-Q' : 'WSP-INV';
@@ -105,4 +106,5 @@ export function AppProvider({ children }) {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAppContext = () => useContext(AppContext);
